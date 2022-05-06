@@ -4,16 +4,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-// Wrap the application
 import { Provider } from 'react-redux';
-// createStore: hold the redux state
-// combineReducers: Create one reducers for all the Redux State tree.
-// applyMiddleware: takes an action and can do something before it reaches any reducer.
 import { createStore, combineReducers, applyMiddleware } from 'redux';
-// logger: permits to see the logger in the console
 import logger from 'redux-logger';
-// reduxPromise: permits the middleware to receive the promise, resolves it and
-// dispatches the plain action to all of the reducers
 import reduxPromise from 'redux-promise';
 
 // internal modules
@@ -22,43 +15,61 @@ import '../assets/stylesheets/application.scss';
 
 // State and reducers
 import messagesReducer from './reducers/messages_reducer';
-import selectedChannelReducer from './reducers/selected_channel_reducer';
+// import selectedChannelReducer from './reducers/selected_channel_reducer';
 
-// function that always returns the value that was used as its argument, unchanged
-// We first start with a state = null
-// it is then changed in the initialState
+import { BrowserRouter as Router, Route, Redirect, Switch }
+  from 'react-router-dom';
+import { createBrowserHistory } from 'history';
+const history = createBrowserHistory();
+
 const identityReducer = (state = null) => state;
 
-// Redux state tree
-// Initial DB that we pass in the Store
+// after replacing all the selectedChannel by channelFromParams
+// I can remove the ones of the State too.
 const initialState = {
   messages: [],
   channels: ['general', 'react', 'paris'],
-  currentUser: prompt("What is your username?") || `anonymous${Math.floor(10 + (Math.random() * 90))}`,
-  selectedChannel: 'general'
+  currentUser: `anonymous${Math.floor(10 + (Math.random() * 90))}`
+  // selectedChannel: 'general'
 };
 
-// combine reducers
-// make the link between the reducers and the State
-// selectedChannelReducer => selectedChannel State
+// Here as well.
 const reducers = combineReducers({
   messages: messagesReducer,
   channels: identityReducer,
-  currentUser: identityReducer,
-  selectedChannel: selectedChannelReducer
+  currentUser: identityReducer
+  // selectedChannel: selectedChannelReducer
 });
 
-// Middlewares
-// We apply the middleware on the Promise and logger
-// We have now in our ReduxDevTool all the actions.
 const middlewares = applyMiddleware(reduxPromise, logger);
-// We createStore with the middlewares.
 const store = createStore(reducers, initialState, middlewares);
 
-// render an instance of the component in the DOM
+// Rooter: History is the library handling the URL.
+// It sees what the URL in the browser address bar, it mounts the correct component.
+// ==> just needed.
+
+// Switch: with all the routes we need.
+// Route: start with generated root /channel
+// will mount the component App
+// For now, just one root.
+// Looks like Rails, column parameter with routes with ids.
+
+// Redirect: we go directly to /general
+// Now, our selectedChannel is provided by the Route.
+// We remove it out of the Redux State (reducers() above)
 ReactDOM.render(
   <Provider store={store}>
-    <App />
+    <Router history={history}>
+      {/* FULL FLOW:
+      2: The URL is updated.
+      3: We go through the Switch and look which routes we are in.
+      4: We mount a new version of the App
+      => See App.jsx */}
+      <Switch>
+        <Route path="/:channel" component={App} />
+        <Redirect from="/" to="/general" />
+      </Switch>
+    </Router>
   </Provider>,
   document.getElementById('app')
 );
